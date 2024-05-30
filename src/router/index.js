@@ -5,6 +5,7 @@ import LoginPage from "../views/Login.vue"; // Import the login component
 import JoinPage from "../views/JoinPage.vue"; // Placeholder for the join page
 import SignUpPage from "../views/SignUpPage.vue";
 import ProductPackages from "../views/ProductPackages.vue";
+import EventDetails from "../views/EventDetails.vue";
 
 const routes = [
   {
@@ -31,6 +32,12 @@ const routes = [
     path: "/ProductPackages",
     name: "ProductPackages",
     component: ProductPackages,
+  },
+  {
+    path: "/events/:id",
+    name: "EventDetails",
+    component: EventDetails,
+    props: true,
   },
 ];
 

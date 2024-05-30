@@ -41,16 +41,24 @@
         <p>Seek retribution and manipulate the game to your advantage.</p>
       </div>
     </section>
+    <section>
+      <CreatedEvent />
+    </section>
   </div>
 </template>
 
 <script>
+import CreatedEvent from "../components/CreatedEvent.vue";
+
 export default {
   name: "LandingPage",
   methods: {
     navigateToJoin() {
       this.$router.push("/join");
     },
+  },
+  components: {
+    CreatedEvent,
   },
 };
 </script>
