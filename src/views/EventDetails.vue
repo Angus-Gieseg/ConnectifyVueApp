@@ -15,16 +15,28 @@
     <button v-if="!isUserRSVPed" @click="rsvpToEvent">RSVP to Event</button>
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="success" class="success">{{ success }}</p>
+    <CharactersCollection :character_list="character_list" />
   </div>
 </template>
 
 <script>
 import { db, auth } from "../firebase";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  collection,
+  getDocs,
+} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import CharactersCollection from "../components/CharactersCollection.vue";
 
 export default {
   name: "EventDetails",
+  components: {
+    CharactersCollection,
+  },
   data() {
     return {
       eventDetails: {},
@@ -32,6 +44,7 @@ export default {
       isUserRSVPed: false,
       error: "",
       success: "",
+      character_list: [],
     };
   },
   async created() {
@@ -42,6 +55,7 @@ export default {
     if (eventDoc.exists()) {
       this.eventDetails = eventDoc.data();
       this.eventDetails.id = eventDoc.id;
+      this.fetchCharactersList();
     } else {
       this.error = "Event not found.";
     }
@@ -54,6 +68,20 @@ export default {
     });
   },
   methods: {
+    async fetchCharactersList() {
+      try {
+        const packageId = this.eventDetails.package_uid;
+        const charactersCollectionRef = collection(
+          db,
+          `products/${packageId}/characters`
+        );
+        const characterDocs = await getDocs(charactersCollectionRef);
+
+        this.character_list = characterDocs.docs.map((doc) => doc.data());
+      } catch (error) {
+        this.error = "Error fetching characters: " + error.message;
+      }
+    },
     async rsvpToEvent() {
       if (!this.user) {
         this.error = "You must be logged in to RSVP.";
