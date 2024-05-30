@@ -1,4 +1,3 @@
-<!-- src/views/SignUp.vue -->
 <template>
   <div class="signup-page">
     <div class="signup-container">
@@ -14,16 +13,31 @@
         </div>
         <button type="submit">Sign Up</button>
       </form>
+      <p-button
+        label="Sign Up with Google"
+        icon="pi pi-google"
+        class="p-button-danger"
+        @click="googleSignUp"
+      />
       <p v-if="error" class="error">{{ error }}</p>
     </div>
   </div>
 </template>
 
 <script>
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+} from "firebase/auth";
+import Button from "primevue/button";
 
 export default {
   name: "SignUpPage",
+  components: {
+    "p-button": Button,
+  },
   data() {
     return {
       email: "",
@@ -36,6 +50,16 @@ export default {
       const auth = getAuth();
       try {
         await createUserWithEmailAndPassword(auth, this.email, this.password);
+        this.$router.push("/ProductPackages"); // Redirect to Packages page on successful sign-up
+      } catch (error) {
+        this.error = error.message;
+      }
+    },
+    async googleSignUp() {
+      const auth = getAuth();
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
         this.$router.push("/ProductPackages"); // Redirect to Packages page on successful sign-up
       } catch (error) {
         this.error = error.message;

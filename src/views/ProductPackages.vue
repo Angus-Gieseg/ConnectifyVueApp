@@ -18,15 +18,18 @@
       </div>
     </div>
   </div>
+  <UploadMurderMyster />
 </template>
 
 <script>
 import Button from "primevue/button";
+import UploadMurderMyster from "../components/UploadMurderMyster.vue";
 
 export default {
   name: "productpackagesPage",
   components: {
     "p-button": Button,
+    UploadMurderMyster,
   },
   data() {
     return {
