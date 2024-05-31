@@ -7,12 +7,12 @@ import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_API_KEY,
-  authDomain: "inhouse-games.firebaseapp.com",
-  projectId: "inhouse-games",
-  storageBucket: "inhouse-games.appspot.com",
-  messagingSenderId: "719347735782",
-  appId: "1:719347735782:web:07351ef1516191e67c2f27",
-  measurementId: "G-65SMJN4WJ1",
+  authDomain: "connectifynz-14eab.firebaseapp.com",
+  projectId: "connectifynz-14eab",
+  storageBucket: "connectifynz-14eab.appspot.com",
+  messagingSenderId: "471396027962",
+  appId: "1:471396027962:web:0868c9058117c140de2f03",
+  measurementId: "G-36S2FPQ585",
 };
 
 // Initialize Firebase
