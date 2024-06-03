@@ -1,13 +1,35 @@
 <template>
   <div>
-    <p-menubar :model="items">
+    <p-menubar :model="menuItems">
       <template #start>
-        <img
-          src="../assets/AtHomeGamesSmall.png"
-          alt="logo"
-          height="40"
-          class="mr-2"
-        />
+        <div class="logo-container" @click="this.$router.push('/')">
+          <img
+            src="../assets/connectifyIcon.svg"
+            alt="Connectify Logo"
+            height="30"
+            class="mr-2"
+          />
+          <p class="logo-text">ConnectifyNZ</p>
+        </div>
+      </template>
+      <template #end>
+        <div v-if="isAuthenticated">
+          <span>Welcome, {{ userDetails?.name || "User" }}</span>
+          <Button
+            label="Sign Out"
+            icon="pi pi-sign-out"
+            class="p-button p-component"
+            @click="signOut"
+          />
+        </div>
+        <div v-else>
+          <Button
+            label="Login"
+            icon="pi pi-sign-in"
+            class="p-button p-component"
+            @click="$router.push('/login')"
+          />
+        </div>
       </template>
     </p-menubar>
   </div>
@@ -15,15 +37,22 @@
 
 <script>
 import Menubar from "primevue/menubar";
+import Button from "primevue/button";
+import { mapGetters, mapActions } from "vuex";
+import { auth } from "../firebase";
 
 export default {
   name: "NavBar",
   components: {
     "p-menubar": Menubar,
+    Button,
+  },
+  computed: {
+    ...mapGetters(["isAuthenticated", "userDetails"]),
   },
   data() {
     return {
-      items: [
+      menuItems: [
         {
           label: "Home",
           icon: "pi pi-fw pi-home",
@@ -32,28 +61,34 @@ export default {
           },
         },
         {
-          label: "Packages",
-          icon: "pi pi-fw pi-box",
+          label: "Profile",
+          icon: "pi pi-fw pi-user",
           command: () => {
-            this.$router.push("/ProductPackages");
+            this.$router.push(`/myprofile/${this.$store.state.user?.uid}`);
           },
-        },
-        {
-          label: "Login",
-          icon: "pi pi-fw pi-sign-in",
-          command: () => {
-            this.$router.push("/login");
-          },
-        },
-        {
-          label: "Sign Up",
-          icon: "pi pi-fw pi-user-plus",
-          command: () => {
-            this.$router.push("/signup");
-          },
+          visible: this.isAuthenticated,
         },
       ],
     };
+  },
+  watch: {
+    isAuthenticated: {
+      immediate: true,
+      handler(newVal) {
+        this.menuItems = this.menuItems.map((item) => {
+          if (item.label === "Profile") {
+            item.visible = newVal;
+          }
+          return item;
+        });
+      },
+    },
+  },
+  methods: {
+    ...mapActions(["signOut"]),
+  },
+  created() {
+    this.$store.dispatch("fetchAuthUser");
   },
 };
 </script>
@@ -61,14 +96,29 @@ export default {
 <style scoped>
 .p-menubar {
   background-color: #ffffff;
-  color: white;
+  color: black;
 }
 
 .p-menubar .p-menubar-root-list > .p-menubar-item > .p-menuitem-link {
-  color: white;
+  color: black;
 }
 
 .p-menubar .p-menubar-root-list > .p-menubar-item > .p-menuitem-link:hover {
   background-color: #ffffff;
+}
+
+.p-button {
+  margin-left: 10px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  margin: 0;
+  font-size: 1.5em;
+  color: black;
 }
 </style>

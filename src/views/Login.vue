@@ -15,17 +15,24 @@
           toggleMask
         />
       </div>
-      <p-button label="Login" icon="pi pi-sign-in" @click="login" />
+      <p-button
+        label="Login"
+        icon="pi pi-sign-in"
+        @click="login"
+        :disabled="loading"
+      />
       <p-button
         label="Login with Google"
         icon="pi pi-google"
         class="p-button-danger"
         @click="googleLogin"
+        :disabled="loading"
       />
       <router-link to="/signup" class="signup-link"
         >Don't have an account? Sign Up</router-link
       >
       <p v-if="error" class="error">{{ error }}</p>
+      <p-progress-spinner v-if="loading"></p-progress-spinner>
     </div>
   </div>
 </template>
@@ -39,6 +46,7 @@ import {
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
 import Button from "primevue/button";
+import ProgressSpinner from "primevue/progressspinner";
 import { auth } from "../firebase"; // Ensure Firebase is initialized
 import { mapActions } from "vuex";
 
@@ -48,37 +56,47 @@ export default {
     "p-inputtext": InputText,
     "p-password": Password,
     "p-button": Button,
+    "p-progress-spinner": ProgressSpinner,
   },
   data() {
     return {
       email: "",
       password: "",
       error: "",
+      loading: false,
     };
   },
   methods: {
-    ...mapActions(["updateUser"]),
+    ...mapActions(["fetchUser"]),
     async login() {
+      this.loading = true;
+      this.error = "";
       try {
         const userCredential = await signInWithEmailAndPassword(
           auth,
           this.email,
           this.password
         );
-        this.updateUser(userCredential.user); // Update store with user info
-        this.$router.push("/ProductPackages"); // Redirect to Packages page on successful login
+        await this.fetchUser(userCredential.user); // Update store with user info
+        this.$router.push("/");
       } catch (error) {
         this.error = error.message;
+      } finally {
+        this.loading = false;
       }
     },
     async googleLogin() {
+      this.loading = true;
+      this.error = "";
       const provider = new GoogleAuthProvider();
       try {
         const result = await signInWithPopup(auth, provider);
-        this.updateUser(result.user); // Update store with user info
-        this.$router.push("/ProductPackages"); // Redirect to Packages page on successful login
+        await this.fetchUser(result.user); // Update store with user info
+        this.$router.push("/");
       } catch (error) {
         this.error = error.message;
+      } finally {
+        this.loading = false;
       }
     },
   },
@@ -153,6 +171,10 @@ button:hover {
 
 .error {
   color: red;
+  margin-top: 1rem;
+}
+
+.p-progress-spinner {
   margin-top: 1rem;
 }
 </style>
