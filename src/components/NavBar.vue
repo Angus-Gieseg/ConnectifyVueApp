@@ -54,7 +54,7 @@ export default {
     return {
       menuItems: [
         {
-          label: "Home",
+          label: "",
           icon: "pi pi-fw pi-home",
           command: () => {
             this.$router.push("/");
@@ -112,6 +112,7 @@ export default {
 }
 
 .logo-container {
+  margin-left: 20px;
   display: flex;
   align-items: center;
 }

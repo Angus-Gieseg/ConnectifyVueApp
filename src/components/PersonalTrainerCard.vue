@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <div class="card" @click="$router.push(`/pt_profile/${data.id}`)">
     <img
       :src="data.personal_trainer.profile_picture"
       alt="Profile Picture"

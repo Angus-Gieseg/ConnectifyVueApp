@@ -7,6 +7,7 @@ import SignUpPage from "../views/SignUpPage.vue";
 import ProductPackages from "../views/ProductPackages.vue";
 import Profilepage from "../views/Profilepage.vue";
 import PTSignUpPage from "../views/PTSignUpPage.vue";
+import PractitionersProfile from "../views/PractitionersProfile.vue";
 
 const routes = [
   {
@@ -33,6 +34,11 @@ const routes = [
     path: "/myprofile/:id",
     name: "Profilepage",
     component: Profilepage,
+  },
+  {
+    path: "/pt_profile/:practitioner_id",
+    name: "",
+    component: PractitionersProfile,
   },
   {
     path: "/pt_sign_up",

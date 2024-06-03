@@ -44,7 +44,7 @@ export default {
         );
         const trainersData = [];
         querySnapshot.forEach((doc) => {
-          trainersData.push(doc.data());
+          trainersData.push({ ...doc.data(), id: doc.id });
         });
         // Repeat the trainer data 10 times for testing
         this.trainers = trainersData;
