@@ -71,13 +71,6 @@
         <Textarea v-model="form.personal_trainer.introduction" required />
       </div>
       <div class="form-group">
-        <label for="location_post_code">Location Post Code:</label>
-        <InputText
-          v-model="form.personal_trainer.location_post_code"
-          required
-        />
-      </div>
-      <div class="form-group">
         <label for="phone_number">Phone Number:</label>
         <InputText v-model="form.personal_trainer.phone_number" required />
       </div>
@@ -135,10 +128,17 @@
       <h2>Gym Place of Work</h2>
       <div class="form-group">
         <label for="place_of_work_address">Place of Work Address:</label>
-        <InputText
-          v-model="form.gym_place_of_work.place_of_work_address"
-          required
+        <AutocompleteInput
+          :address="form.gym_place_of_work.place_of_work_address"
+          @full-address="addAddress"
         />
+        <div v-if="geocodeResult">
+          <p>Geocoded Address: {{ geocodeResult.formatted_address }}</p>
+          <p>
+            Coordinates: {{ geocodeResult.geometry.location.lat }},
+            {{ geocodeResult.geometry.location.lng }}
+          </p>
+        </div>
       </div>
       <div class="form-group">
         <label for="gym_type">Gym Type:</label>
@@ -170,6 +170,7 @@ import InputNumber from "primevue/inputnumber";
 import Button from "primevue/button";
 import Calendar from "primevue/calendar";
 import Rating from "primevue/rating";
+import AutocompleteInput from "../components/AutocompleteInput.vue"; // Adjust the path as necessary
 
 export default {
   name: "SignUpPT",
@@ -180,6 +181,7 @@ export default {
     Button,
     Calendar,
     Rating,
+    AutocompleteInput,
   },
   data() {
     return {
@@ -218,9 +220,13 @@ export default {
         profile_picture: null,
         picture_upload_banner: null,
       },
+      geocodeResult: null,
     };
   },
   methods: {
+    addAddress(locationData) {
+      this.form.gym_place_of_work.place_of_work_address = locationData;
+    },
     async handleFileChange(event, field) {
       const file = event.target.files[0];
       if (file) {
@@ -263,6 +269,100 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.signup-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group .p-inputtext,
+.form-group .p-textarea,
+.form-group .p-inputnumber,
+.form-group .p-calendar,
+.form-group .p-rating {
+  width: 100%;
+}
+
+.form-group ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.form-group ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.specialisation-input {
+  display: flex;
+  gap: 10px;
+}
+
+button[type="submit"] {
+  margin-top: 20px;
+}
+</style>
+
+<style scoped>
+.signup-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group .p-inputtext,
+.form-group .p-textarea,
+.form-group .p-inputnumber,
+.form-group .p-calendar,
+.form-group .p-rating {
+  width: 100%;
+}
+
+.form-group ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.form-group ul li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.specialisation-input {
+  display: flex;
+  gap: 10px;
+}
+
+button[type="submit"] {
+  margin-top: 20px;
+}
+</style>
 
 <style scoped>
 .signup-container {
