@@ -132,7 +132,7 @@ export default {
 .profile-wrapper {
   max-width: 1200px;
   margin: 20px auto;
-  margin-top: 20px;
+  padding: 0 20px;
 }
 
 .practitioner-profile {
@@ -142,39 +142,43 @@ export default {
 
 .profile-card {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: space-between;
+  align-items: center;
   padding: 20px;
   margin-bottom: 20px;
+  border-radius: 10px;
 }
 
 .row2 {
   color: white;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
 .profile-header {
   display: flex;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
 }
 
 .profile-image {
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
   object-fit: cover;
   border-radius: 50%;
-  margin-right: 20px;
+  margin-bottom: 20px;
 }
 
 .details {
-  flex: 1;
+  text-align: center;
 }
 
 .rating {
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .rating-stars {
@@ -197,7 +201,7 @@ export default {
 .contact-section {
   padding: 20px;
   margin-bottom: 20px;
-  max-width: 600px;
+  border-radius: 10px;
 }
 
 .focus-section {
@@ -207,6 +211,7 @@ export default {
 .tags {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .pill {
@@ -223,5 +228,54 @@ export default {
   color: white;
   padding: 10px 20px;
   border-radius: 4px;
+}
+
+/* Media Queries for Mobile Optimization */
+@media (min-width: 768px) {
+  .profile-card {
+    flex-direction: row;
+  }
+
+  .profile-header {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+  }
+
+  .profile-image {
+    width: 200px;
+    height: 200px;
+    margin-right: 20px;
+    margin-bottom: 0;
+  }
+
+  .details {
+    text-align: left;
+  }
+
+  .row2 {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .about-section,
+  .availability-section,
+  .price-section,
+  .focus-section,
+  .education-section {
+    max-width: 45%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .row2 {
+    flex-direction: row;
+  }
+
+  .about-section,
+  .availability-section,
+  .price-section {
+    max-width: 30%;
+  }
 }
 </style>
