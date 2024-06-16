@@ -18,8 +18,6 @@
 
 <script>
 import Carousel from "primevue/carousel";
-import { db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
 import PersonalTrainerCard from "./PersonalTrainerCard.vue";
 
 export default {
@@ -27,32 +25,10 @@ export default {
     Carousel,
     PersonalTrainerCard,
   },
-  data() {
-    return {
-      trainers: [],
-    };
-  },
-  mounted() {
-    this.fetchTrainers();
-  },
-  methods: {
-    async fetchTrainers() {
-      console.log("Fetching personal trainers");
-      try {
-        const querySnapshot = await getDocs(
-          collection(db, "personal_trainers")
-        );
-        const trainersData = [];
-        querySnapshot.forEach((doc) => {
-          trainersData.push({ ...doc.data(), id: doc.id });
-        });
-        // Repeat the trainer data 10 times for testing
-        this.trainers = trainersData;
-        console.log();
-        console.log(this.trainers);
-      } catch (error) {
-        console.error("Error fetching trainers:", error);
-      }
+  props: {
+    trainers: {
+      type: Array,
+      required: true,
     },
   },
 };

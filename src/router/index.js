@@ -37,7 +37,7 @@ const routes = [
   },
   {
     path: "/pt_profile/:practitioner_id",
-    name: "",
+    name: "pt_profile",
     component: PractitionersProfile,
   },
   {

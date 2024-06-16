@@ -1,9 +1,9 @@
 <template>
   <div>
     <div class="landing-container">
-      <div class="Hero">
+      <div v-if="trainers.length" class="Hero">
         <h1 class="main-heading">Find the Personal Trainer fit for you.</h1>
-        <div id="map" class="map"></div>
+        <Map :trainers="trainers" />
       </div>
       <div class="p-grid PTSection">
         <div class="p-col-12 p-md-3">
@@ -12,7 +12,7 @@
           </h2>
         </div>
         <div class="p-col-12 p-md-9">
-          <TrainerCarousel />
+          <TrainerCarousel :trainers="trainers" />
         </div>
       </div>
       <CallToActionPT />
@@ -23,33 +23,39 @@
 <script>
 import TrainerCarousel from "../components/TrainerCarousel.vue";
 import CallToActionPT from "../components/CallToActionPT.vue";
+import Map from "../components/Map.vue";
+import { db } from "../firebase";
+import { collection, getDocs } from "firebase/firestore";
+
 export default {
   name: "LandingPage",
-  mounted() {
-    this.loadGoogleMaps();
-  },
   components: {
     TrainerCarousel,
     CallToActionPT,
+    Map,
+  },
+  data() {
+    return {
+      trainers: [],
+    };
+  },
+  mounted() {
+    this.fetchTrainers();
   },
   methods: {
-    loadGoogleMaps() {
-      if (typeof google === "undefined") {
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyC32U2FipoVpDOVdqExksQ8OoKvLQLDA-U`;
-        script.async = true;
-        script.defer = true;
-        script.onload = this.initMap;
-        document.head.appendChild(script);
-      } else {
-        this.initMap();
+    async fetchTrainers() {
+      console.log("Fetching personal trainers");
+      try {
+        const querySnapshot = await getDocs(collection(db, "personal_trainers"));
+        const trainersData = [];
+        querySnapshot.forEach((doc) => {
+          trainersData.push({ ...doc.data(), id: doc.id });
+        });
+        this.trainers = trainersData;
+        console.log(this.trainers);
+      } catch (error) {
+        console.error("Error fetching trainers:", error);
       }
-    },
-    initMap() {
-      const map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: -36.8509, lng: 174.7645 },
-        zoom: 13,
-      });
     },
   },
 };
@@ -71,11 +77,5 @@ export default {
   font-weight: 400;
   font-size: 2em;
   margin-bottom: 20px;
-}
-
-.map {
-  height: 500px;
-  width: 100%;
-  border-radius: 20px;
 }
 </style>

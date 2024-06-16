@@ -94,7 +94,7 @@ export default {
   gap: 8px;
   position: absolute;
   width: 100%;
-  height: 50%;
+  height: 55%;
   left: 0;
   bottom: 0;
   background: linear-gradient(
