@@ -273,6 +273,11 @@ export default {
         if (docSnap.exists()) {
           const data = docSnap.data();
 
+          // Ensure certifications is an array
+          if (!data.personal_trainer.certifications) {
+            data.personal_trainer.certifications = [];
+          }
+
           // Convert Firestore timestamp to JavaScript Date object
           if (data.personal_trainer.date_of_birth) {
             data.personal_trainer.date_of_birth = new Date(
