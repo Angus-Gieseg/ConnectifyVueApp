@@ -2,6 +2,7 @@
   <div class="signup-container">
     <h1>Sign Up as a Personal Trainer</h1>
     <form @submit.prevent="handleSubmit">
+      <!-- Existing form fields -->
       <div class="form-group">
         <label for="first_name">First Name:</label>
         <InputText v-model="form.personal_trainer.first_name" required />
@@ -10,22 +11,44 @@
         <label for="last_name">Last Name:</label>
         <InputText v-model="form.personal_trainer.last_name" required />
       </div>
+
+      <!-- Certification fields -->
       <div class="form-group">
-        <label for="certification">Certification:</label>
-        <InputText v-model="form.personal_trainer.certification" required />
-      </div>
-      <div class="form-group">
-        <label for="certification_upload">Upload Certification:</label>
-        <input
-          type="file"
-          @change="handleFileChange($event, 'certification_upload')"
-          accept="application/pdf,image/*"
-          required
-        />
-        <span v-if="selectedFiles.certification_upload"
-          >File selected: {{ selectedFiles.certification_upload }}</span
+        <label>Certifications:</label>
+        <div
+          v-for="(cert, index) in form.personal_trainer.certifications"
+          :key="index"
+          class="certification-input"
         >
+          <InputText
+            v-model="cert.name"
+            placeholder="Certification Name"
+            required
+          />
+          <input
+            type="file"
+            @change="handleCertificationFileChange($event, index)"
+            accept="application/pdf,image/*"
+            required
+          />
+          <span v-if="cert.fileName">File selected: {{ cert.fileName }}</span>
+          <Button
+            type="button"
+            label="Remove"
+            icon="pi pi-times"
+            class="p-button-danger"
+            @click="removeCertification(index)"
+          />
+        </div>
+        <Button
+          type="button"
+          label="Add Certification"
+          icon="pi pi-plus"
+          @click="addCertification"
+        />
       </div>
+
+      <!-- Existing form fields -->
       <div class="form-group">
         <label for="contact_email">Contact Email:</label>
         <InputText v-model="form.personal_trainer.contact_email" required />
@@ -129,7 +152,7 @@
       <div class="form-group">
         <label for="place_of_work_address">Place of Work Address:</label>
         <AutocompleteInput
-          :address="form.gym_place_of_work.place_of_work_address"
+          :address="form.gym_place_of_work.place_of_work_address.full_address"
           @full-address="addAddress"
         />
         <div v-if="geocodeResult">
@@ -163,7 +186,14 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { getFirestore, collection, addDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  addDoc,
+} from "firebase/firestore";
+import { useRoute, useRouter } from "vue-router";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
@@ -189,8 +219,7 @@ export default {
         personal_trainer: {
           first_name: "",
           last_name: "",
-          certification: "",
-          certification_upload: null,
+          certifications: [],
           contact_email: "",
           date_of_birth: "",
           gym_affiliation: "",
@@ -208,7 +237,12 @@ export default {
           rating: 0,
         },
         gym_place_of_work: {
-          place_of_work_address: "",
+          place_of_work_address: {
+            full_address: "",
+            place_id: "",
+            suburb: "",
+            city: "",
+          },
           GEOcode_x_y: null,
           gym_type: "",
           equipment_available: "",
@@ -216,52 +250,109 @@ export default {
       },
       newSpecialisation: "",
       selectedFiles: {
-        certification_upload: null,
         profile_picture: null,
         picture_upload_banner: null,
       },
       geocodeResult: null,
+      db: getFirestore(),
     };
   },
+  created() {
+    this.fetchPractitionerData();
+  },
   methods: {
-    addAddress(locationData) {
-      this.form.gym_place_of_work.place_of_work_address = locationData;
+    async fetchPractitionerData() {
+      const route = useRoute();
+      try {
+        const docRef = doc(
+          this.db,
+          "personal_trainers",
+          route.params.practitioner_id
+        );
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+
+          // Convert Firestore timestamp to JavaScript Date object
+          if (data.personal_trainer.date_of_birth) {
+            data.personal_trainer.date_of_birth = new Date(
+              data.personal_trainer.date_of_birth.seconds * 1000
+            );
+          }
+
+          this.form = data;
+        } else {
+          console.error("No such document!");
+        }
+      } catch (error) {
+        console.error("Error getting document:", error);
+      }
     },
     async handleFileChange(event, field) {
       const file = event.target.files[0];
       if (file) {
         try {
-          console.log(`Uploading file: ${file.name}`);
           const storage = getStorage();
           const storageReference = storageRef(storage, `uploads/${file.name}`);
           await uploadBytes(storageReference, file);
           const fileURL = await getDownloadURL(storageReference);
           this.form.personal_trainer[field] = fileURL;
           this.selectedFiles[field] = file.name;
-          console.log(`File uploaded successfully: ${fileURL}`);
         } catch (error) {
           console.error(`Error uploading file: ${error.message}`);
         }
       }
     },
+    async handleCertificationFileChange(event, index) {
+      const file = event.target.files[0];
+      if (file) {
+        try {
+          const storage = getStorage();
+          const storageReference = storageRef(
+            storage,
+            `certifications/${file.name}`
+          );
+          await uploadBytes(storageReference, file);
+          const fileURL = await getDownloadURL(storageReference);
+          this.$set(
+            this.form.personal_trainer.certifications[index],
+            "url",
+            fileURL
+          );
+          this.$set(
+            this.form.personal_trainer.certifications[index],
+            "fileName",
+            file.name
+          );
+        } catch (error) {
+          console.error(`Error uploading certification file: ${error.message}`);
+        }
+      }
+    },
+    addCertification() {
+      this.form.personal_trainer.certifications.push({
+        name: "",
+        url: "",
+        fileName: "",
+      });
+    },
+    removeCertification(index) {
+      this.form.personal_trainer.certifications.splice(index, 1);
+    },
     addSpecialisation() {
       if (this.newSpecialisation) {
-        console.log(`Adding specialisation: ${this.newSpecialisation}`);
         this.form.personal_trainer.specialisation.push(this.newSpecialisation);
         this.newSpecialisation = "";
       }
     },
     removeSpecialisation(index) {
-      console.log(`Removing specialisation at index: ${index}`);
       this.form.personal_trainer.specialisation.splice(index, 1);
     },
     async handleSubmit() {
       try {
-        console.log("Submitting form:", this.form);
         const db = getFirestore();
         await addDoc(collection(db, "personal_trainers"), this.form);
         alert("Sign-up successful!");
-        console.log("Form submitted successfully");
       } catch (error) {
         console.error(`Error submitting form: ${error.message}`);
       }
@@ -312,98 +403,11 @@ export default {
   gap: 10px;
 }
 
-button[type="submit"] {
-  margin-top: 20px;
-}
-</style>
-
-<style scoped>
-.signup-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group .p-inputtext,
-.form-group .p-textarea,
-.form-group .p-inputnumber,
-.form-group .p-calendar,
-.form-group .p-rating {
-  width: 100%;
-}
-
-.form-group ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.form-group ul li {
+.certification-input {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-}
-
-.specialisation-input {
-  display: flex;
   gap: 10px;
-}
-
-button[type="submit"] {
-  margin-top: 20px;
-}
-</style>
-
-<style scoped>
-.signup-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group .p-inputtext,
-.form-group .p-textarea,
-.form-group .p-inputnumber,
-.form-group .p-calendar,
-.form-group .p-rating {
-  width: 100%;
-}
-
-.form-group ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.form-group ul li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.specialisation-input {
-  display: flex;
-  gap: 10px;
+  margin-bottom: 10px;
 }
 
 button[type="submit"] {

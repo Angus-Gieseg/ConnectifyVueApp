@@ -13,8 +13,9 @@
               <h2>
                 {{ practitioner.personal_trainer.first_name }}
                 {{ practitioner.personal_trainer.last_name }}
+                <i class="pi pi-pencil edit-icon" @click="editProfile"></i>
               </h2>
-              <p>{{ practitioner.personal_trainer.instagram_handle }}</p>
+              <p>IG: @{{ practitioner.personal_trainer.instagram_handle }}</p>
               <div class="rating">
                 <h2>{{ practitioner.personal_trainer.rating }}</h2>
                 <div class="rating-stars">
@@ -38,7 +39,6 @@
             <h3>About</h3>
             <p>{{ practitioner.personal_trainer.introduction }}</p>
           </div>
-
           <div class="availability-section">
             <h3>Availability</h3>
             <p>
@@ -63,7 +63,6 @@
             <p>60 Minutes: {{ practitioner.personal_trainer.price_60mins }}</p>
           </div>
         </div>
-
         <div class="focus-section">
           <h3>Focus</h3>
           <div class="tags">
@@ -76,14 +75,10 @@
             </div>
           </div>
         </div>
-
         <div class="education-section">
           <h3>Education</h3>
           <p>{{ practitioner.personal_trainer.education }}</p>
         </div>
-      </div>
-      <div v-else>
-        <p>Loading...</p>
       </div>
     </div>
   </div>
@@ -91,44 +86,92 @@
 
 <script>
 import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { ref } from "vue";
+import { getStorage } from "firebase/storage";
 import Button from "primevue/button";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 export default {
   name: "PractitionersProfile",
   components: {
     Button,
   },
-  setup() {
-    const route = useRoute();
-    const practitioner = ref(null);
-    const db = getFirestore();
-
-    const fetchPractitionerData = async (practitionerId) => {
+  data() {
+    return {
+      practitioner: null,
+      db: getFirestore(),
+      storage: getStorage(),
+    };
+  },
+  created() {
+    this.fetchPractitionerData();
+  },
+  methods: {
+    async fetchPractitionerData() {
+      const route = useRoute();
       try {
-        const docRef = doc(db, "personal_trainers", practitionerId);
+        const docRef = doc(
+          this.db,
+          "personal_trainers",
+          route.params.practitioner_id
+        );
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          practitioner.value = docSnap.data();
+          this.practitioner = { ...docSnap.data(), id: docSnap.id };
         } else {
           console.error("No such document!");
         }
       } catch (error) {
         console.error("Error getting document:", error);
       }
-    };
-
-    fetchPractitionerData(route.params.practitioner_id);
-
-    return {
-      practitioner,
-    };
+    },
+    editProfile() {
+      console.log(this.practitioner, "this.practitioner");
+      this.$router.push(`/practitioner/${this.practitioner.id}/edit`);
+    },
   },
 };
 </script>
 
 <style scoped>
+.edit-icon {
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.certification-section {
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  background-color: #f4f4f9;
+}
+
+.add-certificate-button {
+  margin-bottom: 10px;
+}
+
+.certificate-tile {
+  display: inline-block;
+  margin: 10px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  text-align: center;
+}
+
+.certificate-tile img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+
+.certificate-tile p {
+  margin: 0;
+  font-size: 14px;
+}
+
 .profile-wrapper {
   max-width: 1200px;
   margin: 20px auto;
@@ -136,6 +179,7 @@ export default {
 }
 
 .practitioner-profile {
+  min-height: 90vh;
   padding: 20px;
   background: linear-gradient(#ffffff 0%, #6452ac 20%, #453975 100%);
 }

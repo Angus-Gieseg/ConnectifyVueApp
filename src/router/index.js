@@ -36,15 +36,21 @@ const routes = [
     component: Profilepage,
   },
   {
-    path: "/pt_profile/:practitioner_id",
-    name: "pt_profile",
+    path: "/practitioner/:practitioner_id",
+    name: "practitioner",
     component: PractitionersProfile,
+  },
+  {
+    path: "/practitioner/:practitioner_id/edit",
+    name: "EditProfile",
+    component: PTSignUpPage,
   },
   {
     path: "/pt_sign_up",
     name: "signupPT",
     component: PTSignUpPage,
   },
+
   {
     path: "/ProductPackages",
     name: "ProductPackages",

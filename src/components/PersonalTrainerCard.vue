@@ -1,5 +1,5 @@
 <template>
-  <div class="card" @click="$router.push(`/pt_profile/${data.id}`)">
+  <div class="card" @click="$router.push(`/practitioner/${data.id}`)">
     <img
       :src="data.personal_trainer.profile_picture"
       alt="Profile Picture"
@@ -206,7 +206,7 @@ hr {
 }
 
 .gym-logo {
-  width: 100%;
-  height: auto;
+  width: auto;
+  height: 100%;
 }
 </style>

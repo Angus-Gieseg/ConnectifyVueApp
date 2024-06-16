@@ -25,7 +25,7 @@ export default {
   },
   methods: {
     navigateToTrainer() {
-      this.$router.push(`/pt_profile/${this.trainer.id}`);
+      this.$router.push(`/practitioner/${this.trainer.id}`);
     },
   },
 };

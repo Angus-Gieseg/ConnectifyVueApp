@@ -151,7 +151,7 @@ export default {
                   <div style="text-align: center; padding: 10px;">
                       <h3 style="margin: 0;">${trainer.personal_trainer.first_name}</h3>
                       <div style="background-image: url('${trainer.personal_trainer.profile_picture}'); background-size: cover; background-position: center; width: 100px; height: 100px; margin: 10px auto;"></div>
-                      <button onclick="window.location.href='/pt_profile/${trainer.id}'" style="padding: 5px 10px; border: none; background-color: #007BFF; color: white; border-radius: 5px; cursor: pointer;">View Profile</button>
+                      <button onclick="window.location.href='/practitioner/${trainer.id}'" style="padding: 5px 10px; border: none; background-color: #007BFF; color: white; border-radius: 5px; cursor: pointer;">View Profile</button>
                   </div>`;
 
               const infoWindow = new google.maps.InfoWindow({

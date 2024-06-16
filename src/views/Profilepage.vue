@@ -108,6 +108,9 @@ export default {
       },
     },
   },
+  mounted() {
+    console.log(this.userDetails, this.user);
+  },
   methods: {
     async editModal() {
       await this.fetchDefaultPhotos();
