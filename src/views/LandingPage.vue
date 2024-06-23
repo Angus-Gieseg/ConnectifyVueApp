@@ -3,7 +3,7 @@
     <div class="landing-container">
       <div v-if="trainers.length" class="Hero">
         <h1 class="main-heading">Find the Personal Trainer fit for you.</h1>
-        <Map :trainers="trainers" />
+        <Map :trainers="trainers" :newMapAddress="newMapAddress" />
       </div>
       <div class="p-grid PTSection">
         <div class="p-col-12 p-md-3">
@@ -12,7 +12,7 @@
           </h2>
         </div>
         <div class="p-col-12 p-md-9">
-          <TrainerCarousel :trainers="trainers" />
+          <TrainerCarousel :trainers="trainers" @map-location="updateMap" />
         </div>
       </div>
       <CallToActionPT />
@@ -37,6 +37,7 @@ export default {
   data() {
     return {
       trainers: [],
+      newMapAddress: null,
     };
   },
   mounted() {
@@ -56,6 +57,10 @@ export default {
       } catch (error) {
         console.error("Error fetching trainers:", error);
       }
+    },
+    updateMap(data){
+      console.log(data)
+      this.newMapAddress = data.place_id
     },
   },
 };

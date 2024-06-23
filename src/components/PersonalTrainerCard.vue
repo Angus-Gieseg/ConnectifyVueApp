@@ -5,7 +5,20 @@
       alt="Profile Picture"
       class="profile-picture"
     />
+    <div class="header-buttons">
+        <Button 
+          icon="pi pi-map-marker" 
+          class="p-button-rounded p-button-secondary" 
+          @click.stop="viewOnMap"
+        />
+        <Button 
+          icon="pi pi-envelope" 
+          class="p-button-rounded p-button-secondary" 
+          @click.stop="bookTrainer"
+        />
+      </div>
     <div class="overlay">
+      
       <h2>
         {{ data.personal_trainer.first_name }}
         {{ data.personal_trainer.last_name }}
@@ -19,10 +32,11 @@
           {{ speciality }}
         </div>
       </div>
+
       <p class="introduction-text">{{ data.personal_trainer.introduction }}</p>
       <hr />
       <div class="footer">
-        <div class="rating">
+        <div class="rating" v-if="data.personal_trainer.rating !== 0 ">
           <div>Rating</div>
           <div class="stars">
             <i
@@ -38,14 +52,16 @@
             ></i>
           </div>
         </div>
+        <div class="rating" v-else>
+          <div>Rating</div>
+          <div class="stars">
+            New Member
+          </div>
+        </div>
         <div class="separator"></div>
         <div class="gym">
-          <div>Gym</div>
-          <img
-            :src="data.personal_trainer.picture_upload_banner"
-            alt="Gym Logo"
-            class="gym-logo"
-          />
+          <div>Location</div>
+          <p style="margin-top: 0px;">{{ data.gym_place_of_work.place_of_work_address.suburb }}</p>
         </div>
       </div>
     </div>
@@ -53,14 +69,36 @@
 </template>
 
 <script>
+import Button from 'primevue/button';
+
 export default {
   name: "PersonalTrainerCard",
+  components: {
+    Button,
+  },
   props: {
     data: {
       type: Object,
       required: true,
     },
   },
+  created(){
+    console.log(this.data, "data")
+  },
+  methods: {
+    viewOnMap(event) {
+      event.stopPropagation();
+      // Add your logic to view on map here
+      this.$emit("map-location", this.data.gym_place_of_work.place_of_work_address)
+      console.log("View on map clicked");
+    },
+    bookTrainer(event) {
+      event.stopPropagation();
+      // Test route to page for now
+      this.$router.push(`/practitioner/${data.id}`)
+      console.log("Book trainer clicked");
+    }
+  }
 };
 </script>
 
@@ -106,6 +144,15 @@ export default {
   z-index: 2;
 }
 
+.header-buttons {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 10px;
+  z-index: 3;
+}
+
 h2 {
   width: 100%;
   font-family: "Poppins", sans-serif;
@@ -116,15 +163,6 @@ h2 {
   letter-spacing: -0.01em;
   color: #ffffff;
   margin: 0;
-}
-
-.tags {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  padding: 0;
-  gap: 10px;
-  width: 100%;
 }
 
 .pill {
@@ -141,6 +179,18 @@ h2 {
   line-height: 90%;
   letter-spacing: -0.01em;
   color: #000000;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.tags {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  padding: 0;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: nowrap; /* Prevent flex items from wrapping to the next line */
+  overflow: hidden; /* Hide overflowing pills */
 }
 
 .introduction-text {

@@ -9,7 +9,7 @@
     >
       <template #item="{ data: trainer }">
         <div class="card-wrapper">
-          <PersonalTrainerCard :data="trainer" />
+          <PersonalTrainerCard :data="trainer" @map-location="showOnMap"/>
         </div>
       </template>
     </Carousel>
@@ -31,6 +31,13 @@ export default {
       required: true,
     },
   },
+  methods:{
+    showOnMap(data) {
+      // Add your logic to view on map here
+      this.$emit("map-location", data)
+      console.log("View on map clicked");
+    },
+  }
 };
 </script>
 

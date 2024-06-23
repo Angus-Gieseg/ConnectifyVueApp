@@ -2,12 +2,13 @@
   <div>
     <p-menubar :model="menuItems">
       <template #start>
-        <div class="logo-container" @click="this.$router.push('/')">
+        <div class="logo-container">
           <img
             src="../assets/connectifyIcon.svg"
             alt="Connectify Logo"
             height="30"
             class="mr-2"
+            @click="$router.push('/')"
           />
           <p class="logo-text">ConnectifyNZ</p>
         </div>
@@ -53,13 +54,6 @@ export default {
   data() {
     return {
       menuItems: [
-        {
-          label: "",
-          icon: "pi pi-fw pi-home",
-          command: () => {
-            this.$router.push("/");
-          },
-        },
         {
           label: "Profile",
           icon: "pi pi-fw pi-user",

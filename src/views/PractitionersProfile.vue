@@ -12,15 +12,19 @@
             <div class="details">
               <h2>
                 {{ practitioner.personal_trainer.first_name }}
-                {{ practitioner.personal_trainer.last_name }}
+                {{ practitioner.gym_place_of_work.place_of_work_address.suburb }}
                 <i class="pi pi-pencil edit-icon" @click="editProfile"></i>
               </h2>
               <p>IG: @{{ practitioner.personal_trainer.instagram_handle }}</p>
-              <div class="rating">
+              <p>IG: @{{ practitioner.personal_trainer.instagram_handle }}</p>
+              <div class="rating" v-if="practitioner.personal_trainer.rating !== 0">
                 <h2>{{ practitioner.personal_trainer.rating }}</h2>
-                <div class="rating-stars">
+                <div  class="rating-stars">
                   <i class="pi pi-star" v-for="star in 5" :key="star"></i>
                 </div>
+              </div>
+              <div class="rating" v-else style="color: white;">
+                <h2>New Member</h2>
               </div>
               <div class="contact-section">
                 <Button label="Contact" class="contact-button" />
@@ -120,6 +124,7 @@ export default {
         } else {
           console.error("No such document!");
         }
+        console.log(this.practitioner, "practitioner")
       } catch (error) {
         console.error("Error getting document:", error);
       }

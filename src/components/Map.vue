@@ -14,12 +14,24 @@ export default {
       type: Array,
       required: true,
     },
+    newMapAddress: {
+      type: String,
+      required: false,
+    },
   },
   watch: {
     trainers: {
       handler(newTrainers) {
         if (newTrainers.length) {
           this.initMap();
+        }
+      },
+      immediate: true,
+    },
+    newMapAddress: {
+      handler(newPlaceId) {
+        if (newPlaceId) {
+          this.setMapCenterByPlaceId(newPlaceId);
         }
       },
       immediate: true,
@@ -33,7 +45,7 @@ export default {
       return new Promise((resolve, reject) => {
         if (typeof google === "undefined") {
           const script = document.createElement("script");
-          script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places`;
+          script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyC32U2FipoVpDOVdqExksQ8OoKvLQLDA-U&libraries=places`;
           script.async = true;
           script.defer = true;
           script.onload = () => resolve();
@@ -49,7 +61,7 @@ export default {
 
       await this.loadGoogleMaps();
 
-      const map = new google.maps.Map(document.getElementById("map"), {
+      this.map = new google.maps.Map(document.getElementById("map"), {
         zoom: 13,
         center: centerPosition,
         styles: [
@@ -133,12 +145,12 @@ export default {
           trainer.gym_place_of_work.place_of_work_address.place_id;
 
         if (placeId) {
-          const service = new google.maps.places.PlacesService(map);
+          const service = new google.maps.places.PlacesService(this.map);
 
           service.getDetails({ placeId: placeId }, (place, status) => {
             if (status === google.maps.places.PlacesServiceStatus.OK) {
               const marker = new google.maps.Marker({
-                map,
+                map: this.map,
                 position: place.geometry.location,
                 title: place.name,
                 icon: {
@@ -159,7 +171,7 @@ export default {
               });
 
               marker.addListener("mouseover", () => {
-                infoWindow.open(map, marker);
+                infoWindow.open(this.map, marker);
               });
 
               marker.addListener("mouseout", () => {
@@ -170,15 +182,29 @@ export default {
 
               marker.addListener("click", () => {
                 infoWindow.set("clicked", true);
-                infoWindow.open(map, marker);
+                infoWindow.open(this.map, marker);
               });
 
-              google.maps.event.addListener(map, "click", () => {
+              google.maps.event.addListener(this.map, "click", () => {
                 infoWindow.set("clicked", false);
                 infoWindow.close();
               });
             }
           });
+        }
+      });
+    },
+    async setMapCenterByPlaceId(placeId) {
+      if (!this.map) return;
+
+      const service = new google.maps.places.PlacesService(this.map);
+
+      service.getDetails({ placeId }, (place, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && place.geometry) {
+          this.map.setCenter(place.geometry.location);
+          this.map.setZoom(14);
+        } else {
+          console.error(`PlacesService was not successful for the following reason: ${status}`);
         }
       });
     },
