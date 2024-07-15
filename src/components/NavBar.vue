@@ -2,13 +2,12 @@
   <div>
     <p-menubar :model="menuItems">
       <template #start>
-        <div class="logo-container">
+        <div class="logo-container" @click="$router.push('/')">
           <img
             src="../assets/connectifyIcon.svg"
             alt="Connectify Logo"
             height="30"
             class="mr-2"
-            @click="$router.push('/')"
           />
           <p class="logo-text">ConnectifyNZ</p>
         </div>

@@ -8,6 +8,7 @@ import ProductPackages from "../views/ProductPackages.vue";
 import Profilepage from "../views/Profilepage.vue";
 import PTSignUpPage from "../views/PTSignUpPage.vue";
 import PractitionersProfile from "../views/PractitionersProfile.vue";
+import FormBuilder from "../views/FormBuilder.vue";
 
 const routes = [
   {
@@ -55,6 +56,11 @@ const routes = [
     path: "/ProductPackages",
     name: "ProductPackages",
     component: ProductPackages,
+  },
+  {
+    path: "/create_feedback_form",
+    name: "FormBuilder",
+    component: FormBuilder, // Add the new route here
   },
 ];
 

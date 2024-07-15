@@ -47,7 +47,9 @@ export default {
     async fetchTrainers() {
       console.log("Fetching personal trainers");
       try {
-        const querySnapshot = await getDocs(collection(db, "personal_trainers"));
+        const querySnapshot = await getDocs(
+          collection(db, "personal_trainers")
+        );
         const trainersData = [];
         querySnapshot.forEach((doc) => {
           trainersData.push({ ...doc.data(), id: doc.id });
@@ -58,9 +60,9 @@ export default {
         console.error("Error fetching trainers:", error);
       }
     },
-    updateMap(data){
-      console.log(data)
-      this.newMapAddress = data.place_id
+    updateMap(data) {
+      console.log(data);
+      this.newMapAddress = data.place_id;
     },
   },
 };

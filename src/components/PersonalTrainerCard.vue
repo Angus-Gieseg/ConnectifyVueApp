@@ -82,9 +82,6 @@ export default {
       required: true,
     },
   },
-  created(){
-    console.log(this.data, "data")
-  },
   methods: {
     viewOnMap(event) {
       event.stopPropagation();
@@ -95,7 +92,7 @@ export default {
     bookTrainer(event) {
       event.stopPropagation();
       // Test route to page for now
-      this.$router.push(`/practitioner/${data.id}`)
+      this.$router.push(`/practitioner/${this.data.id}`)
       console.log("Book trainer clicked");
     }
   }

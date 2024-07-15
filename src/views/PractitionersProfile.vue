@@ -12,11 +12,10 @@
             <div class="details">
               <h2>
                 {{ practitioner.personal_trainer.first_name }}
-                {{ practitioner.gym_place_of_work.place_of_work_address.suburb }}
                 <i class="pi pi-pencil edit-icon" @click="editProfile"></i>
               </h2>
               <p>IG: @{{ practitioner.personal_trainer.instagram_handle }}</p>
-              <p>IG: @{{ practitioner.personal_trainer.instagram_handle }}</p>
+              <p>Address: {{ practitioner.gym_place_of_work.place_of_work_address.full_address }}</p>
               <div class="rating" v-if="practitioner.personal_trainer.rating !== 0">
                 <h2>{{ practitioner.personal_trainer.rating }}</h2>
                 <div  class="rating-stars">
@@ -67,15 +66,23 @@
             <p>60 Minutes: {{ practitioner.personal_trainer.price_60mins }}</p>
           </div>
         </div>
-        <div class="focus-section">
-          <h3>Focus</h3>
-          <div class="tags">
-            <div
-              v-for="speciality in practitioner.personal_trainer.specialisation"
-              :key="speciality"
-              class="pill"
-            >
-              {{ speciality }}
+        <div class="row2">
+          <div v-if="practitioner.personal_trainer"> 
+            <CalendlyEvents :calendlyAPI="practitioner.personal_trainer.apiCalendly" />
+          </div>
+          <div v-else>
+            <p>Calendly integration is not available for this trainer.</p>
+          </div>
+          <div class="focus-section">
+            <h3>Focus</h3>
+            <div class="tags">
+              <div
+                v-for="speciality in practitioner.personal_trainer.specialisation"
+                :key="speciality"
+                class="pill"
+              >
+                {{ speciality }}
+              </div>
             </div>
           </div>
         </div>
@@ -92,12 +99,14 @@
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import Button from "primevue/button";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
+import CalendlyEvents from "../components/Calendar.vue";
 
 export default {
   name: "PractitionersProfile",
   components: {
     Button,
+    CalendlyEvents
   },
   data() {
     return {
@@ -124,7 +133,7 @@ export default {
         } else {
           console.error("No such document!");
         }
-        console.log(this.practitioner, "practitioner")
+        console.log(this.practitioner, "practitioner");
       } catch (error) {
         console.error("Error getting document:", error);
       }
@@ -143,40 +152,6 @@ export default {
   margin-left: 10px;
 }
 
-.certification-section {
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 10px;
-  background-color: #f4f4f9;
-}
-
-.add-certificate-button {
-  margin-bottom: 10px;
-}
-
-.certificate-tile {
-  display: inline-block;
-  margin: 10px;
-  padding: 10px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  text-align: center;
-}
-
-.certificate-tile img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  margin-bottom: 10px;
-}
-
-.certificate-tile p {
-  margin: 0;
-  font-size: 14px;
-}
-
 .profile-wrapper {
   max-width: 1200px;
   margin: 20px auto;
@@ -187,13 +162,15 @@ export default {
   min-height: 90vh;
   padding: 20px;
   background: linear-gradient(#ffffff 0%, #6452ac 20%, #453975 100%);
+  display: flex;
+  justify-content: flex-start;
 }
 
 .profile-card {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 10px;
@@ -203,12 +180,13 @@ export default {
   color: white;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
 }
 
 .profile-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
 }
 
@@ -221,13 +199,13 @@ export default {
 }
 
 .details {
-  text-align: center;
+  text-align: left;
 }
 
 .rating {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .rating-stars {
@@ -251,6 +229,7 @@ export default {
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 10px;
+  text-align: left;
 }
 
 .focus-section {
@@ -260,7 +239,7 @@ export default {
 .tags {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .pill {
