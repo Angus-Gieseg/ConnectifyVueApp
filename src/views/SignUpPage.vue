@@ -1,8 +1,16 @@
 <template>
   <div class="signup-page">
-    <div class="signup-container">
-      <h2>Sign Up for Murder Mystery Nights</h2>
+    <div class="signup-container" v-if="!additionalDetails">
+      <h2>Sign Up</h2>
       <form @submit.prevent="signUp">
+        <div class="input-group">
+          <label for="first-name">First Name</label>
+          <input v-model="firstName" type="text" id="first-name" required />
+        </div>
+        <div class="input-group">
+          <label for="last-name">Last Name</label>
+          <input v-model="lastName" type="text" id="last-name" required />
+        </div>
         <div class="input-group">
           <label for="email">Email</label>
           <input v-model="email" type="email" id="email" required />
@@ -10,6 +18,17 @@
         <div class="input-group">
           <label for="password">Password</label>
           <input v-model="password" type="password" id="password" required />
+        </div>
+        <div class="input-group">
+          <label for="profile-picture">Profile Picture (Optional)</label>
+          <input @change="onFileChange" type="file" id="profile-picture" />
+        </div>
+        <div class="input-group">
+          <label for="role">Sign Up As</label>
+          <select v-model="role" id="role" required>
+            <option value="client">Client</option>
+            <option value="practitioner">Practitioner</option>
+          </select>
         </div>
         <button type="submit">Sign Up</button>
       </form>
@@ -21,6 +40,37 @@
       />
       <p v-if="error" class="error">{{ error }}</p>
     </div>
+
+    <div class="signup-container" v-else>
+      <h2>Complete Your Profile</h2>
+      <form @submit.prevent="completeProfile">
+        <div class="input-group">
+          <label for="first-name">First Name</label>
+          <input v-model="firstName" type="text" id="first-name" required />
+        </div>
+        <div class="input-group">
+          <label for="last-name">Last Name</label>
+          <input v-model="lastName" type="text" id="last-name" required />
+        </div>
+        <div class="input-group">
+          <label for="profile-picture">Profile Picture (Optional)</label>
+          <input @change="onFileChange" type="file" id="profile-picture" />
+        </div>
+        <div class="input-group">
+          <label for="role">Sign Up As</label>
+          <select v-model="role" id="role" required>
+            <option value="client">Client</option>
+            <option value="practitioner">Practitioner</option>
+          </select>
+        </div>
+        <button type="submit">Complete Profile</button>
+      </form>
+      <p v-if="error" class="error">{{ error }}</p>
+    </div>
+
+    <div v-if="loading" class="loading-spinner">
+      <p-progress-spinner />
+    </div>
   </div>
 </template>
 
@@ -31,39 +81,102 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { setDoc, doc } from "firebase/firestore";
 import Button from "primevue/button";
+import ProgressSpinner from "primevue/progressspinner";
+import { storage, db } from "../firebase"; // Ensure you have initialized Firebase storage and Firestore
 
 export default {
   name: "SignUpPage",
   components: {
     "p-button": Button,
+    "p-progress-spinner": ProgressSpinner,
   },
   data() {
     return {
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
+      profilePicture: null,
+      role: "client",
       error: "",
+      additionalDetails: false,
+      user: null,
+      loading: false,
     };
   },
   methods: {
+    onFileChange(event) {
+      this.profilePicture = event.target.files[0];
+    },
     async signUp() {
       const auth = getAuth();
       try {
-        await createUserWithEmailAndPassword(auth, this.email, this.password);
-        this.$router.push("/ProductPackages"); // Redirect to Packages page on successful sign-up
+        this.loading = true;
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          this.email,
+          this.password
+        );
+        this.user = userCredential.user;
+        this.additionalDetails = true;
+        this.loading = false;
       } catch (error) {
         this.error = error.message;
+        this.loading = false;
       }
     },
     async googleSignUp() {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
       try {
-        await signInWithPopup(auth, provider);
-        this.$router.push("/ProductPackages"); // Redirect to Packages page on successful sign-up
+        this.loading = true;
+        const result = await signInWithPopup(auth, provider);
+        this.user = result.user;
+        this.additionalDetails = true;
+        this.loading = false;
       } catch (error) {
         this.error = error.message;
+        this.loading = false;
       }
+    },
+    async completeProfile() {
+      if (this.user) {
+        try {
+          this.loading = true;
+          await this.saveProfile(this.user);
+          this.$router.push("/"); // Redirect to Packages page on successful profile completion
+        } catch (error) {
+          this.error = error.message;
+          this.loading = false;
+        }
+      }
+    },
+    async saveProfile(user) {
+      // Upload profile picture if provided
+      let profilePictureUrl = "";
+      if (this.profilePicture) {
+        const storageRef = ref(storage, `profile_pictures/${user.uid}`);
+        await uploadBytes(storageRef, this.profilePicture);
+        profilePictureUrl = await getDownloadURL(storageRef);
+      }
+
+      // Determine the collection to save the user data
+      const collection =
+        this.role === "practitioner" ? "practitioner_users" : "clients";
+
+      // Save additional user data to Firestore
+      await setDoc(doc(db, collection, user.uid), {
+        uid: user.uid,
+        firstName: this.firstName,
+        lastName: this.lastName,
+        email: user.email,
+        role: this.role,
+        profilePictureUrl,
+      });
+      this.loading = false;
     },
   },
 };
@@ -102,7 +215,8 @@ h2 {
   color: #333;
 }
 
-.input-group input {
+.input-group input,
+.input-group select {
   width: 100%;
   padding: 0.5rem;
   border: 1px solid #ccc;
@@ -127,5 +241,12 @@ button:hover {
 .error {
   color: red;
   margin-top: 1rem;
+}
+
+.loading-spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

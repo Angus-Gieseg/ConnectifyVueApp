@@ -1,312 +1,228 @@
 <template>
-  <div class="profile-page" v-if="userDetails">
-    <div class="profile-header">
-      <div class="name-edit">
-        <h2>
-          {{ userDetails.name }} ({{ userDetails.username }})
-          <Button
-            icon="pi pi-pencil"
-            class="p-button-rounded p-button-text"
-            @click="editModal"
-          />
-        </h2>
+  <div class="profile-page" v-if="user">
+    <div class="profile-content">
+      <div class="profile-container">
+        <img
+          :src="user.profilePictureUrl"
+          alt="Profile Picture"
+          class="profile-picture"
+        />
+        <h2>{{ user.firstName }} {{ user.lastName }}</h2>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.role }}</p>
+        <div class="button-group">
+          <button @click="connectWithPractitioner">
+            Connect with Practitioner
+          </button>
+          <button @click="setLocalGym">Set Local Gym</button>
+        </div>
       </div>
-      <div class="display-photo-container" @click="showModal = true">
-        <img :src="displayPhotoUrl" alt="Display Photo" class="display-photo" />
-      </div>
-    </div>
-    <div class="profile-details">
-      <p><strong>Events Attended:</strong> {{ userDetails.events_attended }}</p>
-      <p><strong>Events Hosted:</strong> {{ userDetails.events_hosted }}</p>
-      <p>
-        <strong>Owned Packages:</strong>
-        {{ userDetails.owned_packages.join(", ") }}
-      </p>
-    </div>
-    <p v-if="error" class="error">{{ error }}</p>
 
-    <Dialog header="Edit Profile" v-model:visible="showModal" modal>
-      <div class="modal-content">
-        <div class="field">
-          <label for="name">Display Name</label>
-          <InputText id="name" v-model="newName" />
-        </div>
-        <div class="field">
-          <label for="username">Username</label>
-          <InputText id="username" v-model="newUsername" />
-        </div>
-        <div class="field">
-          <label for="photo">Profile Photo</label>
-          <input type="file" @change="handlePhotoUpload" />
-        </div>
-        <div class="character-profiles">
-          <h3>Select Default Profile Picture</h3>
-          <div class="scroll-container">
-            <div
-              class="profile-item"
-              v-for="photo in defaultPhotos"
-              :key="photo"
-              @click="selectDefaultPhoto(photo)"
-            >
-              <img :src="photo" alt="Default Profile" class="default-photo" />
-            </div>
-          </div>
-        </div>
-        <div class="buttons">
-          <Button label="Save" icon="pi pi-check" @click="saveChanges" />
-          <Button
-            label="Cancel"
-            icon="pi pi-times"
-            class="p-button-text"
-            @click="showModal = false"
-          />
+      <i v-if="practitioner" class="pi pi-link link-icon"></i>
+
+      <div class="practitioner-card" v-if="practitioner">
+        <h3>Practitioner Details</h3>
+        <img
+          :src="practitioner.personal_trainer.profile_picture"
+          alt="Profile Picture"
+          class="profile-picture"
+        />
+        <p>
+          <strong>Name:</strong> {{ practitioner.personal_trainer.first_name }}
+          {{ practitioner.last_name }}
+        </p>
+        <p>
+          <strong>Gym:</strong>
+          {{ practitioner.personal_trainer.gym_affiliation }}
+        </p>
+        <p>
+          <strong>Address:</strong>
+          {{
+            practitioner.gym_place_of_work.place_of_work_address.full_address
+          }}
+        </p>
+        <div class="button-group">
+          <button @click="addFeedback">Add Feedback</button>
+          <button @click="viewPlan">View Plan</button>
         </div>
       </div>
-    </Dialog>
+
+      <div class="practitioner-card empty" v-else>
+        <div class="empty-card">
+          <i class="pi pi-plus-circle"></i>
+          <p>Connect with Practitioner</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div v-else>
+    <p>Loading user details...</p>
   </div>
 </template>
 
 <script>
-import { mapGetters } from "vuex";
-import { db, storage } from "../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { ref, listAll, getDownloadURL, uploadBytes } from "firebase/storage";
-import Button from "primevue/button";
-import InputText from "primevue/inputtext";
-import Dialog from "primevue/dialog";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  query,
+  where,
+  collection,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "../firebase"; // Ensure you have initialized Firebase Firestore
 
 export default {
-  name: "Profilepage",
-  components: {
-    Button,
-    InputText,
-    Dialog,
-  },
+  name: "ProfilePage",
   data() {
     return {
-      hover: false,
-      displayPhotoUrl: "",
-      newName: "",
-      newUsername: "",
-      showModal: false,
-      defaultPhotos: [],
+      user: null,
+      practitioner: null,
       error: "",
     };
   },
-  computed: {
-    ...mapGetters(["user", "userDetails"]),
-  },
-  watch: {
-    userDetails: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) {
-          this.newName = newVal.name;
-          this.newUsername = newVal.username;
-          this.setDisplayPhotoUrl();
+  created() {
+    const auth = getAuth();
+    onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "clients", currentUser.uid));
+          if (userDoc.exists()) {
+            this.user = userDoc.data();
+            if (this.user.practitioner_id) {
+              await this.fetchPractitionerDetails(this.user.practitioner_id);
+            }
+          } else {
+            const practitionerDoc = await getDoc(
+              doc(db, "practitioner_users", currentUser.uid)
+            );
+            if (practitionerDoc.exists()) {
+              this.user = practitionerDoc.data();
+            } else {
+              this.error =
+                "User not found in either clients or practitioner_users collections.";
+            }
+          }
+        } catch (error) {
+          this.error = "Error fetching user data: " + error.message;
         }
-      },
-    },
-  },
-  mounted() {
-    console.log(this.userDetails, this.user);
+      } else {
+        this.error = "No user is currently signed in.";
+      }
+    });
   },
   methods: {
-    async editModal() {
-      await this.fetchDefaultPhotos();
-      this.showModal = true;
-    },
-    async fetchDefaultPhotos() {
+    async fetchPractitionerDetails(practitionerId) {
       try {
-        const listRef = ref(
-          storage,
-          "gs://inhouse-games.appspot.com/murderMysterDefaultPorfiles"
+        const q = query(
+          collection(db, "personal_trainers"),
+          where("uid", "==", practitionerId)
         );
-        const res = await listAll(listRef);
-        const urls = await Promise.all(
-          res.items.map((item) => getDownloadURL(item))
-        );
-        this.defaultPhotos = urls;
-      } catch (error) {
-        this.error = "Error fetching default photos: " + error.message;
-      }
-    },
-    setDisplayPhotoUrl() {
-      if (this.userDetails && this.userDetails.display_photo_url) {
-        this.displayPhotoUrl = this.userDetails.display_photo_url;
-      } else {
-        this.displayPhotoUrl = this.defaultPhotos[0];
-      }
-    },
-    async handlePhotoUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      try {
-        const storageRef = ref(storage, `display_photos/${this.user.uid}`);
-        await uploadBytes(storageRef, file);
-        const photoURL = await getDownloadURL(storageRef);
-
-        await updateDoc(doc(db, "users", this.$route.params.id), {
-          display_photo_url: photoURL,
-        });
-
-        this.displayPhotoUrl = photoURL;
-        this.$store.commit("setUserDetails", {
-          ...this.userDetails,
-          display_photo_url: photoURL,
-        });
-      } catch (error) {
-        this.error = "Error uploading photo: " + error.message;
-      }
-    },
-    async selectDefaultPhoto(photo) {
-      try {
-        await updateDoc(doc(db, "users", this.$route.params.id), {
-          display_photo_url: photo,
-        });
-
-        this.displayPhotoUrl = photo;
-        this.$store.commit("setUserDetails", {
-          ...this.userDetails,
-          display_photo_url: photo,
-        });
-      } catch (error) {
-        this.error = "Error selecting default photo: " + error.message;
-      }
-    },
-    async saveChanges() {
-      try {
-        const updates = {};
-        if (this.newName !== this.userDetails.name) {
-          updates.name = this.newName;
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          this.practitioner = querySnapshot.docs[0].data();
+          console.log(this.practitioner, "this.practitioner");
+        } else {
+          this.error = "Practitioner not found.";
         }
-        if (this.newUsername !== this.userDetails.username) {
-          updates.username = this.newUsername;
-        }
-        if (Object.keys(updates).length) {
-          await updateDoc(doc(db, "users", this.$route.params.id), updates);
-          this.$store.commit("setUserDetails", {
-            ...this.userDetails,
-            ...updates,
-          });
-        }
-        this.showModal = false;
       } catch (error) {
-        this.error = "Error saving changes: " + error.message;
+        this.error = "Error fetching practitioner data: " + error.message;
       }
+    },
+    connectWithPractitioner() {
+      alert("Connect with Practitioner clicked!");
+    },
+    setLocalGym() {
+      alert("Set Local Gym clicked!");
     },
   },
 };
 </script>
+
 <style scoped>
 .profile-page {
-  max-width: 800px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 20px;
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
+  background-color: #f4f4f4;
+}
+
+.profile-content {
+  display: flex;
+  align-items: center;
+}
+
+.profile-container,
+.practitioner-card {
+  background: white;
+  padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   text-align: center;
-  font-family: "Roboto", sans-serif;
+  width: 300px;
+  margin: 20px;
 }
 
-.profile-header {
+.link-icon {
+  font-size: 2rem;
+  margin: 0 20px;
+}
+
+.profile-picture {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+
+h2 {
+  margin-bottom: 1rem;
+}
+
+p {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.button-group {
+  margin-top: 1rem;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin: 0.5rem;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.practitioner-card.empty {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
-}
-
-.display-photo-container {
-  position: relative;
-  width: 150px;
   height: 150px;
-  margin-bottom: 20px;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
+  border: 2px dashed #ccc;
 }
 
-.display-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.upload-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.profile-details p {
-  margin: 10px 0;
-}
-
-.name-edit {
+.empty-card {
   display: flex;
+  flex-direction: column;
   align-items: center;
-}
-
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  max-width: 390px;
-  margin: 0 auto;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.character-profiles {
-  margin-top: 20px;
-}
-
-.scroll-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 0;
-}
-
-.profile-item {
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.profile-item:hover,
-.profile-item.selected {
-  border-color: #007bff;
-}
-
-.default-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.buttons {
-  display: flex;
-  justify-content: space-between;
+  font-size: 1.5rem;
+  color: #ccc;
 }
 
 .error {
   color: red;
-  margin-top: 20px;
+  margin-top: 1rem;
 }
 </style>
