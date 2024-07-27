@@ -324,8 +324,10 @@ export default {
             storage,
             `${field}/${userId}/${file.name}`
           );
+
           await uploadBytes(storageReference, file);
           const fileURL = await getDownloadURL(storageReference);
+
           this.form.personal_trainer[field] = fileURL;
           this.selectedFiles[field] = file.name;
           console.log(`${field} uploaded successfully: ${fileURL}`);

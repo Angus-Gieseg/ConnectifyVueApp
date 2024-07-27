@@ -1,8 +1,8 @@
 // src/store/store.js
 import { createStore } from "vuex";
-import { auth, db } from "../firebase"; // Ensure this is your firebase config file
+import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const store = createStore({
   state: {
@@ -26,7 +26,7 @@ const store = createStore({
           commit("setUserDetails", userDoc.data());
         } else {
           // If the user document does not exist, create it
-          await db.collection("users").doc(user.uid).set({
+          await setDoc(doc(db, "users", user.uid), {
             displayName: user.displayName,
             email: user.email,
             photoURL: user.photoURL,
