@@ -27,6 +27,7 @@
           />
           <input
             type="file"
+            :ref="`certFile${index}`"
             @change="handleCertificationFileChange($event, index)"
             accept="application/pdf,image/*"
             required
@@ -65,6 +66,7 @@
         <label for="profile_picture">Profile Picture:</label>
         <input
           type="file"
+          ref="profile_picture"
           @change="handleFileChange($event, 'profile_picture')"
           accept="image/*"
           required
@@ -77,6 +79,7 @@
         <label for="picture_upload_banner">Upload Banner Picture:</label>
         <input
           type="file"
+          ref="picture_upload_banner"
           @change="handleFileChange($event, 'picture_upload_banner')"
           accept="image/*"
           required
@@ -180,6 +183,7 @@
 </template>
 
 <script>
+import { mapActions, mapGetters } from "vuex";
 import {
   getStorage,
   ref as storageRef,
@@ -193,7 +197,7 @@ import {
   collection,
   addDoc,
 } from "firebase/firestore";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import InputText from "primevue/inputtext";
 import Textarea from "primevue/textarea";
 import InputNumber from "primevue/inputnumber";
@@ -257,10 +261,22 @@ export default {
       db: getFirestore(),
     };
   },
+  computed: {
+    ...mapGetters(["isAuthenticated", "user"]),
+  },
   created() {
+    this.checkAuthState();
     this.fetchPractitionerData();
   },
   methods: {
+    ...mapActions(["fetchAuthUser"]),
+    checkAuthState() {
+      if (!this.isAuthenticated) {
+        this.fetchAuthUser();
+      } else {
+        console.log("User is authenticated: ", this.user.uid);
+      }
+    },
     async fetchPractitionerData() {
       const route = useRoute();
       try {
@@ -297,14 +313,24 @@ export default {
       const file = event.target.files[0];
       if (file) {
         try {
+          if (!this.isAuthenticated) {
+            throw new Error("User is not authenticated.");
+          }
+
+          console.log(`Uploading ${field}...`);
+          const userId = this.user.uid;
           const storage = getStorage();
-          const storageReference = storageRef(storage, `uploads/${file.name}`);
+          const storageReference = storageRef(
+            storage,
+            `${field}/${userId}/${file.name}`
+          );
           await uploadBytes(storageReference, file);
           const fileURL = await getDownloadURL(storageReference);
           this.form.personal_trainer[field] = fileURL;
           this.selectedFiles[field] = file.name;
+          console.log(`${field} uploaded successfully: ${fileURL}`);
         } catch (error) {
-          console.error(`Error uploading file: ${error.message}`);
+          console.error(`Error uploading ${field}: ${error.message}`);
         }
       }
     },
@@ -312,25 +338,28 @@ export default {
       const file = event.target.files[0];
       if (file) {
         try {
+          if (!this.isAuthenticated) {
+            throw new Error("User is not authenticated.");
+          }
+
+          console.log(`Uploading certification file for index ${index}...`);
+          const userId = this.user.uid;
           const storage = getStorage();
           const storageReference = storageRef(
             storage,
-            `certifications/${file.name}`
+            `practitioner_profiles/${userId}/${file.name}`
           );
           await uploadBytes(storageReference, file);
           const fileURL = await getDownloadURL(storageReference);
-          this.$set(
-            this.form.personal_trainer.certifications[index],
-            "url",
-            fileURL
-          );
-          this.$set(
-            this.form.personal_trainer.certifications[index],
-            "fileName",
-            file.name
+          this.form.personal_trainer.certifications[index].url = fileURL;
+          this.form.personal_trainer.certifications[index].fileName = file.name;
+          console.log(
+            `Certification file for index ${index} uploaded successfully: ${fileURL}`
           );
         } catch (error) {
-          console.error(`Error uploading certification file: ${error.message}`);
+          console.error(
+            `Error uploading certification file for index ${index}: ${error.message}`
+          );
         }
       }
     },
@@ -355,11 +384,85 @@ export default {
     },
     async handleSubmit() {
       try {
-        const db = getFirestore();
-        await addDoc(collection(db, "personal_trainers"), this.form);
+        // Ensure the user is authenticated
+        if (!this.isAuthenticated) {
+          alert("You must be logged in to sign up as a personal trainer.");
+          return;
+        }
+
+        // Ensure all file uploads are complete before saving to Firestore
+        console.log("Starting file uploads...");
+        await this.uploadAllFiles();
+
+        console.log("File uploads complete, saving to Firestore...");
+        const searchField = `${this.form.personal_trainer.first_name} ${this.form.personal_trainer.last_name} ${this.form.personal_trainer.instagram_handle}`;
+        await addDoc(collection(this.db, "personal_trainers"), {
+          ...this.form,
+          search_field: searchField.toLowerCase(), // store in lowercase for easier searching
+        });
+        console.log("Data saved to Firestore successfully.");
         alert("Sign-up successful!");
       } catch (error) {
         console.error(`Error submitting form: ${error.message}`);
+      }
+    },
+    async uploadAllFiles() {
+      try {
+        if (!this.isAuthenticated) {
+          throw new Error("User is not authenticated.");
+        }
+
+        const userId = this.user.uid;
+
+        // Upload profile picture
+        if (this.$refs.profile_picture.files[0]) {
+          const profilePicURL = await this.uploadFile(
+            this.$refs.profile_picture.files[0],
+            `profile_pictures/${userId}`
+          );
+          this.form.personal_trainer.profile_picture = profilePicURL;
+        }
+
+        // Upload banner picture
+        if (this.$refs.picture_upload_banner.files[0]) {
+          const bannerPicURL = await this.uploadFile(
+            this.$refs.picture_upload_banner.files[0],
+            `practitioner_profiles/${userId}/banners`
+          );
+          this.form.personal_trainer.picture_upload_banner = bannerPicURL;
+        }
+
+        // Upload certifications
+        const certificationUploadPromises =
+          this.form.personal_trainer.certifications.map(async (cert, index) => {
+            if (this.$refs[`certFile${index}`].files[0]) {
+              const certURL = await this.uploadCertificationFile(
+                this.$refs[`certFile${index}`].files[0],
+                `practitioner_profiles/${userId}/certifications`
+              );
+              this.form.personal_trainer.certifications[index].url = certURL;
+            }
+          });
+
+        await Promise.all(certificationUploadPromises);
+      } catch (error) {
+        console.error("Error uploading files: ", error.message);
+      }
+    },
+    async uploadFile(file, path) {
+      if (file) {
+        try {
+          console.log(`Uploading file to ${path}...`);
+          const storage = getStorage();
+          const storageReference = storageRef(storage, `${path}/${file.name}`);
+          await uploadBytes(storageReference, file);
+          const fileURL = await getDownloadURL(storageReference);
+          console.log(`File uploaded successfully to ${path}: ${fileURL}`);
+          return fileURL;
+        } catch (error) {
+          console.error(`Error uploading file to ${path}: ${error.message}`);
+          throw error;
+        }
       }
     },
   },
